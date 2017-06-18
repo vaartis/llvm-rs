@@ -18,10 +18,10 @@ extern "C" {
     fn LLVMTypeIsSized(tp: *const CType) -> bool;
 }
 
-enum CType {}
+pub(super) enum CType {}
 
 pub struct Type {
-    inner: *const CType
+    pub(super) inner: *const CType
 }
 
 #[derive(Debug, PartialEq, Eq)]

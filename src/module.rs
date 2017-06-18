@@ -3,8 +3,6 @@ extern crate libc;
 use std::ffi::{CStr, CString};
 use std::fmt;
 
-use ::LLVMErr;
-
 use ::types::*;
 use ::value::*;
 
@@ -16,13 +14,15 @@ extern "C" {
 
     fn LLVMAddFunction(m: *const CModule, nm: *const libc::c_char, tp: *const CType) -> *const CValue;
     fn LLVMGetNamedFunction(m: *const CModule, nm: *const libc::c_char) -> *const CValue;
+    fn LLVMGetFirstFunction(m: *const CModule) -> *const CValue;
+    fn LLVMGetNextFunction(m: *const CValue) -> *const CValue;
 }
 
 pub(super) enum CModule {}
 
 pub struct Module {
     pub name: String,
-    pub(super) inner: *const CModule
+    pub(super) inner: *const CModule,
 }
 
 impl Module {
@@ -47,6 +47,26 @@ impl Module {
 
         if f.is_null() { None } else { Some(Value{inner: f }) }
     }
+
+    pub fn functions(&self) -> Vec<Value> {
+        let f = unsafe { LLVMGetFirstFunction(self.inner) };
+        if f.is_null() {
+            vec![]
+        } else {
+            let mut res = vec![Value{inner: f}];
+            let mut current = f;
+            loop {
+                let next = unsafe { LLVMGetNextFunction(current) };
+                if !next.is_null() {
+                    res.push(Value{inner: next});
+                    current = next;
+                } else {
+                    break;
+                }
+            }
+            res
+        }
+    }
 }
 
 impl fmt::Debug for Module {
@@ -66,6 +86,9 @@ impl Drop for Module {
 #[test]
 fn test_add_function() {
     let modl = Module::new_with_name("test");
-    let f = modl.add_function("testf", Type::function_type(Type::int32(), &vec![], false));
+    let _ = modl.add_function("testf", Type::function_type(Type::int32(), &vec![], false));
     assert!(modl.find_function("testf").is_some());
+    let _ = modl.add_function("testf2", Type::function_type(Type::int32(), &vec![], false));
+
+    assert!(modl.functions().len() == 2);
 }

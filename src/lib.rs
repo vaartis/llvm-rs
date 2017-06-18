@@ -47,7 +47,52 @@ pub struct Type {
     inner: *const CType
 }
 
+#[derive(Debug, PartialEq, Eq)]
+#[repr(C)]
+pub enum TypeKind {
+    /// type with no size
+    Void,
+    /// 16 bit floating point type
+    Half,
+    ///  32 bit floating point type
+    Float,
+    // 64 bit floating point type
+    Double,
+    /// 80 bit floating point type (X87)
+    X86FP80,
+    /// 128 bit floating point type (112-bit mantissa)
+    FP128,
+    /// 128 bit floating point type (two 64-bits)
+    PPCFP128,
+    // Labels
+    Label,
+    // Arbitrary bit width integers
+    Integer,
+    /// Functions
+    Function,
+    /// Structures
+    Struct,
+    /// Arrays
+    Array,
+    /// Pointers
+    Pointer,
+    /// SIMD 'packed' format, or other vector type
+    Vector,
+    /// Metadata
+    Metadata,
+    /// X86 MMX
+    X86MMX,
+    /// Tokens
+    Token
+}
+
 impl Type {
+    pub fn kind(&self) -> TypeKind {
+        unsafe {
+            LLVMGetTypeKind(self.inner)
+        }
+    }
+
     pub fn int8() -> Type { Type{inner: unsafe { LLVMInt8Type() }} }
     pub fn int16() -> Type { Type{inner: unsafe { LLVMInt16Type() }} }
     pub fn int32() -> Type { Type{inner: unsafe { LLVMInt32Type() }} }
@@ -83,12 +128,13 @@ extern "C" {
     fn LLVMInt128Type() -> *const CType;
     fn LLVMIntType(num: libc::c_uint) -> *const CType;
 
+    fn LLVMGetTypeKind(tp: *const CType) -> TypeKind;
     fn LLVMFunctionType(ret_type: *const CType , args: *const CType, param_count: libc::c_uint, is_vararg: bool) -> *const CType;
     fn LLVMPrintTypeToString(tp: *const CType) -> *const libc::c_char;
 }
 
 #[test]
-fn create_module() {
-    let t = Type::function_type(Type::int32(), &vec![Type::int32(), Type::int8()], false);
-    println!("{:?}", t);
+fn test_type_kind() {
+    assert!(Type::int32().kind() == TypeKind::Integer);
+    assert!(Type::function_type(Type::int32(), &vec![], false).kind() == TypeKind::Function);
 }

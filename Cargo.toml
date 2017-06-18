@@ -1,0 +1,7 @@
+[package]
+name = "llvm-rs"
+version = "0.1.0"
+authors = ["Ekaterina Vaartis <TyanNN@cocaine.ninja>"]
+
+[dependencies]
+libc = "*"

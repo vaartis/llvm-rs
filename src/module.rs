@@ -33,9 +33,7 @@ impl Module {
         Module{name: name.to_string(), inner: c_modl}
     }
 
-    pub fn add_function(&self, name: &str, tp: Type) -> Value {
-        debug_assert!(tp.kind() == TypeKind::Function);
-
+    pub fn add_function(&self, name: &str, tp: FunctionType) -> Value {
         let c_name = CString::new(name).unwrap();
         Value{inner: unsafe { LLVMAddFunction(self.inner, c_name.as_ptr(), tp.inner) } }
     }
@@ -86,9 +84,9 @@ impl Drop for Module {
 #[test]
 fn test_add_function() {
     let modl = Module::new_with_name("test");
-    let _ = modl.add_function("testf", Type::function_type(Type::int32(), &vec![], false));
+    let _ = modl.add_function("testf", FunctionType::new(Type::int32(), &vec![], false));
     assert!(modl.find_function("testf").is_some());
-    let _ = modl.add_function("testf2", Type::function_type(Type::int32(), &vec![], false));
+    let _ = modl.add_function("testf2", FunctionType::new(Type::int32(), &vec![], false));
 
     assert!(modl.functions().len() == 2);
 }

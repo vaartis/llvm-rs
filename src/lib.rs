@@ -1,3 +1,5 @@
+#![feature(try_from)]
+
 extern crate libc;
 
 pub mod types;

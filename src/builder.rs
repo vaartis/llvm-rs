@@ -7,12 +7,10 @@ extern "C" {
 
 pub(super) enum CBuilder {}
 
-pub struct IRBuilder {
-    pub(super) inner: *const CBuilder
-}
+pub struct IRBuilder(pub(super) *const CBuilder);
 
 impl IRBuilder {
     fn new() -> IRBuilder {
-        IRBuilder{inner: unsafe { LLVMCreateBuilder() }}
+        IRBuilder(unsafe { LLVMCreateBuilder() })
     }
 }

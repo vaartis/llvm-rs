@@ -34,9 +34,7 @@ extern "C" {
 pub(super) enum CType {}
 
 #[derive(PartialEq,Eq)]
-pub struct Type {
-    pub(super) inner: *const CType
-}
+pub struct Type(pub(super) *const CType);
 
 #[derive(Debug, PartialEq, Eq)]
 #[repr(C)]
@@ -80,43 +78,43 @@ pub enum TypeKind {
 impl Type {
     pub fn kind(&self) -> TypeKind {
         unsafe {
-            LLVMGetTypeKind(self.inner)
+            LLVMGetTypeKind(self.0)
         }
     }
 
     pub fn sized(&self) -> bool {
         unsafe {
-            LLVMTypeIsSized(self.inner)
+            LLVMTypeIsSized(self.0)
         }
     }
 
-    pub fn int8() -> Type { Type{inner: unsafe { LLVMInt8Type() }} }
-    pub fn int16() -> Type { Type{inner: unsafe { LLVMInt16Type() }} }
-    pub fn int32() -> Type { Type{inner: unsafe { LLVMInt32Type() }} }
-    pub fn int64() -> Type { Type{inner: unsafe { LLVMInt64Type() }} }
-    pub fn int128() -> Type { Type{inner: unsafe { LLVMInt128Type() }} }
-    pub fn int(num: libc::c_uint) -> Type { Type{inner: unsafe { LLVMIntType(num) }} } // c_uint is just an alias, so probably OK
+    pub fn int8() -> Type { Type(unsafe { LLVMInt8Type() }) }
+    pub fn int16() -> Type { Type(unsafe { LLVMInt16Type() }) }
+    pub fn int32() -> Type { Type(unsafe { LLVMInt32Type() }) }
+    pub fn int64() -> Type { Type(unsafe { LLVMInt64Type() }) }
+    pub fn int128() -> Type { Type(unsafe { LLVMInt128Type()}) }
+    pub fn int(num: libc::c_uint) -> Type { Type(unsafe { LLVMIntType(num) }) } // c_uint is just an alias, so probably OK
 
     pub fn undef(tp: Type) -> Type {
-        Type{inner: unsafe { LLVMTypeGetUndef(tp.inner) } }
+        Type(unsafe { LLVMTypeGetUndef(tp.0) })
     }
 
     pub fn void() -> Type {
-        Type{inner: unsafe { LLVMVoidType() } }
+        Type(unsafe { LLVMVoidType() })
     }
 
     pub fn const_null(tp: Type) -> Type {
-        Type{inner: unsafe { LLVMTypeConstNull(tp.inner) } }
+        Type(unsafe { LLVMTypeConstNull(tp.0) })
     }
 
     pub fn const_pointer_null(tp: Type) -> Type {
-        Type{inner: unsafe { LLVMTypeConstPointerNull(tp.inner) } }
+        Type(unsafe { LLVMTypeConstPointerNull(tp.0) })
     }
 }
 
 impl fmt::Debug for Type {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let c_s = unsafe { CStr::from_ptr(LLVMPrintTypeToString(self.inner)) };
+        let c_s = unsafe { CStr::from_ptr(LLVMPrintTypeToString(self.0)) };
         let st = c_s.to_str().unwrap(); // Propably valid utf8
         write!(f, "{}", st)
     }
@@ -124,7 +122,7 @@ impl fmt::Debug for Type {
 
 impl From<FunctionType> for Type {
     fn from(t: FunctionType) -> Self {
-        Type{inner: t.inner}
+        Type(t.0)
     }
 }
 
@@ -133,7 +131,7 @@ impl TryFrom<Type> for FunctionType {
     // () - not a function type
     fn try_from(val: Type) -> Result<FunctionType, ()> {
         if val.kind() == TypeKind::Function {
-            Ok(FunctionType{inner: val.inner})
+            Ok(FunctionType(val.0))
         } else {
             Err(())
         }
@@ -141,33 +139,30 @@ impl TryFrom<Type> for FunctionType {
 }
 
 #[derive(PartialEq,Eq)]
-pub struct FunctionType {
-    pub(super) inner: *const CType
-}
+pub struct FunctionType(pub(super) *const CType);
 
 impl FunctionType {
     pub fn new(ret_type: Type, args: &[Type], is_vararg: bool) -> FunctionType {
-        let c_ret_t = ret_type.inner;
-        let args_ctypes = args.iter().map(|x| x.inner).collect::<Vec<_>>().as_ptr() as *const CType;
-        FunctionType{inner: unsafe { LLVMFunctionType(c_ret_t, args_ctypes, args.len() as libc::c_uint, is_vararg) }}
+        let args_ctypes = args.iter().map(|x| x.0).collect::<Vec<_>>().as_ptr() as *const CType;
+        FunctionType(unsafe { LLVMFunctionType(ret_type.0, args_ctypes, args.len() as libc::c_uint, is_vararg) })
     }
 
     pub fn is_vararg(&self) -> bool {
-        unsafe { LLVMIsFunctionVarArg(self.inner) }
+        unsafe { LLVMIsFunctionVarArg(self.0) }
     }
 
     pub fn return_type(&self) -> Type {
-        unsafe { Type{inner: LLVMGetReturnType(self.inner)} }
+        unsafe { Type(LLVMGetReturnType(self.0)) }
     }
 
     pub fn params(&self) -> Vec<Type> {
         unsafe {
-            let ln = LLVMCountParamTypes(self.inner) as usize;
+            let ln = LLVMCountParamTypes(self.0) as usize;
             let arr = Vec::<*const CType>::with_capacity(ln).as_mut_ptr() as *mut CType;
-            LLVMGetParamTypes(self.inner, arr);
+            LLVMGetParamTypes(self.0, arr);
             let arr = arr as *mut *const CType;
             slice::from_raw_parts(arr, ln)
-                .iter().map(|x| Type{inner: *x}).collect::<Vec<_>>()
+                .iter().map(|x| Type(*x)).collect::<Vec<_>>()
         }
     }
 }

@@ -1,0 +1,15 @@
+dist: trusty
+language: rust
+rust:
+  - nightly
+
+addons:
+  apt:
+    sources:
+      - sourceline: "deb http://apt.llvm.org/trusty/ llvm-toolchain-trusty-4.0 main"
+        key_url: "http://apt.llvm.org/llvm-snapshot.gpg.key"
+    packages:
+      - llvm-4.0 llvm-4.0-dev
+
+script:
+  cargo test --verbose -- --test-threads=1

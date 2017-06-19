@@ -13,6 +13,7 @@ extern "C" {
 
 pub(super) enum CBasicBlock {}
 
+#[derive(PartialEq,Eq)]
 pub struct BasicBlock(pub(super) *const CBasicBlock);
 
 impl From<BasicBlock> for Value {

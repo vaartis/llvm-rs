@@ -15,7 +15,7 @@ pub(super) enum CValue {}
 pub struct Value(pub(super) *const CValue);
 
 impl Value {
-    fn type_of(&self) -> Type {
+    pub fn type_of(&self) -> Type {
         unsafe { Type(LLVMTypeOf(self.0)) }
     }
 }

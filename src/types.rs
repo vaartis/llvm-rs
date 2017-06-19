@@ -167,31 +167,36 @@ impl FunctionType {
     }
 }
 
-#[test]
-fn test_params() {
-    let f = FunctionType::new(Type::void(), &vec![Type::int32(), Type::int8()], true);
-    let pars = f.params();
-    assert!(pars.len() == 2);
-    assert!(pars[0] == Type::int32());
-    assert!(pars[1] == Type::int8());
-}
+#[cfg(test)]
+mod tests {
+    use super::{Type,FunctionType,TypeKind};
 
-#[test]
-fn test_return_type() {
-    let f = FunctionType::new(Type::void(), &vec![], true);
-    assert!(f.return_type() == Type::void());
-}
+    #[test]
+    fn test_params() {
+        let f = FunctionType::new(Type::void(), &vec![Type::int32(), Type::int8()], true);
+        let pars = f.params();
+        assert!(pars.len() == 2);
+        assert!(pars[0] == Type::int32());
+        assert!(pars[1] == Type::int8());
+    }
 
-#[test]
-fn test_is_vararg() {
-    let f = FunctionType::new(Type::int32(), &vec![], true);
-    assert!(f.is_vararg());
-    let f = FunctionType::new(Type::int32(), &vec![], false);
-    assert!(!f.is_vararg());
-}
+    #[test]
+    fn test_return_type() {
+        let f = FunctionType::new(Type::void(), &vec![], true);
+        assert!(f.return_type() == Type::void());
+    }
 
-#[test]
-fn test_type_kind() {
-    assert!(Type::int32().kind() == TypeKind::Integer);
-    assert!(Type::from(FunctionType::new(Type::int32(), &vec![], false)).kind() == TypeKind::Function);
+    #[test]
+    fn test_is_vararg() {
+        let f = FunctionType::new(Type::int32(), &vec![], true);
+        assert!(f.is_vararg());
+        let f = FunctionType::new(Type::int32(), &vec![], false);
+        assert!(!f.is_vararg());
+    }
+
+    #[test]
+    fn test_type_kind() {
+        assert!(Type::int32().kind() == TypeKind::Integer);
+        assert!(Type::from(FunctionType::new(Type::int32(), &vec![], false)).kind() == TypeKind::Function);
+    }
 }

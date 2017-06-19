@@ -79,12 +79,18 @@ impl Drop for Module {
     }
 }
 
-#[test]
-fn test_add_function() {
-    let modl = Module::new_with_name("test");
-    let _ = modl.add_function("testf", FunctionType::new(Type::int32(), &vec![], false));
-    assert!(modl.find_function("testf").is_some());
-    let _ = modl.add_function("testf2", FunctionType::new(Type::int32(), &vec![], false));
+#[cfg(test)]
+mod tests {
+    use super::Module;
+    use ::types::{Type, FunctionType};
 
-    assert!(modl.functions().len() == 2);
+    #[test]
+    fn test_add_function() {
+        let modl = Module::new_with_name("test");
+        let _ = modl.add_function("testf", FunctionType::new(Type::int32(), &vec![], false));
+        assert!(modl.find_function("testf").is_some());
+        let _ = modl.add_function("testf2", FunctionType::new(Type::int32(), &vec![], false));
+
+        assert!(modl.functions().len() == 2);
+    }
 }

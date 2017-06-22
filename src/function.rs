@@ -6,7 +6,6 @@ use std::convert::From;
 use ::value::*;
 use ::basic_block::*;
 
-#[link(name = "LLVM-4.0")]
 extern "C" {
     fn LLVMGetEntryBasicBlock(f: *const CValue) -> *const CBasicBlock;
     fn LLVMAppendBasicBlock(f: *const CValue, name: *const libc::c_char) -> *const CBasicBlock;
@@ -49,6 +48,7 @@ mod tests {
     fn test_entry_bb() {
         let modl = Module::new_with_name("test");
         let f = modl.add_function("testf", FunctionType::new(Type::int32(), &vec![], false));
-        let _ = f.append_bb("entry");
+        let bl = f.append_bb("entry");
+        assert_eq!(f.entry_bb().unwrap(), bl);
     }
 }

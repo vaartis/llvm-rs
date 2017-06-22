@@ -1,11 +1,12 @@
 extern crate libc;
 
 use std::convert::{From,TryFrom};
+use std::fmt;
+use std::ffi::CStr;
 
 use value::*;
 use value_kind::*;
 
-#[link(name = "LLVM-4.0")]
 extern "C" {
     fn LLVMValueAsBasicBlock(val: *const CValue) -> *const CBasicBlock;
     fn LLVMBasicBlockAsValue(val: *const CBasicBlock) -> *const CValue;
@@ -34,5 +35,13 @@ impl TryFrom<Value> for BasicBlock {
         } else {
             Err(())
         }
+    }
+}
+
+impl fmt::Debug for BasicBlock {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let c_s = unsafe { CStr::from_ptr(LLVMPrintValueToString(LLVMBasicBlockAsValue(self.0))) };
+        let st = c_s.to_str().unwrap(); // Propably valid utf8
+        write!(f, "{}", st)
     }
 }

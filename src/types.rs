@@ -5,8 +5,8 @@ use std::fmt;
 use std::convert::{From,TryFrom};
 use std::ffi::CStr;
 
-#[link(name = "LLVM-4.0")]
 extern "C" {
+    fn LLVMInt1Type() -> *const CType;
     fn LLVMInt8Type() -> *const CType;
     fn LLVMInt16Type() -> *const CType;
     fn LLVMInt32Type() -> *const CType;
@@ -88,6 +88,7 @@ impl Type {
         }
     }
 
+    pub fn int1() -> Type { Type(unsafe { LLVMInt1Type() }) }
     pub fn int8() -> Type { Type(unsafe { LLVMInt8Type() }) }
     pub fn int16() -> Type { Type(unsafe { LLVMInt16Type() }) }
     pub fn int32() -> Type { Type(unsafe { LLVMInt32Type() }) }
@@ -175,15 +176,15 @@ mod tests {
     fn test_params() {
         let f = FunctionType::new(Type::void(), &vec![Type::int32(), Type::int8()], true);
         let pars = f.params();
-        assert!(pars.len() == 2);
-        assert!(pars[0] == Type::int32());
-        assert!(pars[1] == Type::int8());
+        assert_eq!(pars.len(), 2);
+        assert_eq!(pars[0], Type::int32());
+        assert_eq!(pars[1], Type::int8());
     }
 
     #[test]
     fn test_return_type() {
         let f = FunctionType::new(Type::void(), &vec![], true);
-        assert!(f.return_type() == Type::void());
+        assert_eq!(f.return_type(), Type::void());
     }
 
     #[test]
@@ -196,7 +197,7 @@ mod tests {
 
     #[test]
     fn test_type_kind() {
-        assert!(Type::int32().kind() == TypeKind::Integer);
-        assert!(Type::from(FunctionType::new(Type::int32(), &vec![], false)).kind() == TypeKind::Function);
+        assert_eq!(Type::int32().kind(), TypeKind::Integer);
+        assert_eq!(Type::from(FunctionType::new(Type::int32(), &vec![], false)).kind(), TypeKind::Function);
     }
 }

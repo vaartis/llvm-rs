@@ -1,6 +1,5 @@
 use ::value::*;
 
-#[link(name = "LLVM-4.0")]
 #[allow(dead_code)]
 extern "C" {
     fn LLVMValueIsNullValue(val: *const CValue) -> bool;

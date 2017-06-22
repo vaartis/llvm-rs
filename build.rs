@@ -1,10 +1,21 @@
 use std::process::Command;
 
 fn main() {
-    let ll_path = match Command::new("llvm-config").arg("--libdir").output() {
-        Ok(x) => String::from_utf8(x.stdout).unwrap(),
-        Err(_) => panic!("llvm-config not found")
-    };
+    if let Ok(x) = Command::new("llvm-config").arg("--libdir").output() {
+        println!("cargo:rustc-link-search=native={}", String::from_utf8(x.stdout).unwrap().trim());
+    } else {
+        panic!("llvm-config not found")
+    }
 
-    println!("cargo:rustc-link-search=native={}", ll_path);
+    if let Ok(x) = Command::new("llvm-config").arg("--libs").output() {
+        for n in String::from_utf8(x.stdout)
+            .unwrap()
+            .replace("-l", "")
+            .trim()
+            .split(" ") {
+                println!("cargo:rustc-link-lib={}", n);
+            }
+    } else {
+        panic!("llvm-config --libs failed")
+    }
 }

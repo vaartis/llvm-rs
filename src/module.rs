@@ -7,7 +7,6 @@ use ::types::*;
 use ::value::*;
 use ::function::Function;
 
-#[link(name = "LLVM-4.0")]
 extern "C" {
     fn LLVMModuleCreateWithName(s: *const libc::c_char) -> *const CModule;
     fn LLVMPrintModuleToString(m: *const CModule) -> *const libc::c_char;
@@ -91,6 +90,6 @@ mod tests {
         assert!(modl.find_function("testf").is_some());
         let _ = modl.add_function("testf2", FunctionType::new(Type::int32(), &vec![], false));
 
-        assert!(modl.functions().len() == 2);
+        assert_eq!(modl.functions().len(), 2);
     }
 }

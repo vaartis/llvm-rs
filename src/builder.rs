@@ -4,7 +4,6 @@ use std::ops::Drop;
 use ::basic_block::*;
 use ::value::*;
 
-#[link(name = "LLVM-4.0")]
 extern "C" {
     fn LLVMCreateBuilder() -> *const CBuilder;
     fn LLVMPositionBuilderAtEnd(b: *const CBuilder, bb: *const CBasicBlock);
@@ -13,6 +12,7 @@ extern "C" {
 
     fn LLVMBuildRetVoid(bld: *const CBuilder) -> *const CValue;
     fn LLVMBuildRet(bld: *const CBuilder, val: *const CValue) -> *const CValue;
+    fn LLVMBuildBr(bld: *const CBuilder, bb: *const CBasicBlock) -> *const CValue;
 }
 
 pub(super) enum CBuilder {}
@@ -41,6 +41,10 @@ impl IRBuilder {
     pub fn ret(&self, val: Value) -> Value {
         Value(unsafe { LLVMBuildRet(self.0, val.0) })
     }
+
+    pub fn br(&self, br: BasicBlock) -> Value {
+        Value(unsafe { LLVMBuildBr(self.0, br.0) })
+    }
 }
 
 impl Drop for IRBuilder {
@@ -64,6 +68,6 @@ mod tests {
         let entry_b = f.append_bb("entry");
         let builder = IRBuilder::new();
         builder.position_at_end(f.entry_bb().unwrap());
-        assert!(builder.insertion_block() == entry_b);
+        assert_eq!(builder.insertion_block(), entry_b);
     }
 }

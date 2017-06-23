@@ -46,7 +46,7 @@ mod tests {
 
     #[test]
     fn test_entry_bb() {
-        let modl = Module::new_with_name("test");
+        let modl = Module::new("test");
         let f = modl.add_function("testf", FunctionType::new(Type::int32(), &vec![], false));
         let bl = f.append_bb("entry");
         assert_eq!(f.entry_bb().unwrap(), bl);

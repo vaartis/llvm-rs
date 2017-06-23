@@ -3,14 +3,17 @@ extern crate libc;
 use std::ffi::{CStr, CString};
 use std::fmt;
 
+use ::context::*;
 use ::types::*;
 use ::value::*;
 use ::function::Function;
 
 extern "C" {
     fn LLVMModuleCreateWithName(s: *const libc::c_char) -> *const CModule;
-    fn LLVMPrintModuleToString(m: *const CModule) -> *const libc::c_char;
+    fn LLVMModuleCreateWithNameInContext(s: *const libc::c_char, cont: *const CContext) -> *const CModule;
     fn LLVMDisposeModule(m: *const CModule);
+
+    fn LLVMPrintModuleToString(m: *const CModule) -> *const libc::c_char;
 
     fn LLVMAddFunction(m: *const CModule, nm: *const libc::c_char, tp: *const CType) -> *const CValue;
     fn LLVMGetNamedFunction(m: *const CModule, nm: *const libc::c_char) -> *const CValue;
@@ -23,11 +26,15 @@ pub(super) enum CModule {}
 pub struct Module(pub(super) *const CModule);
 
 impl Module {
-    pub fn new_with_name(name: &str) -> Self {
+    pub fn new(name: &str) -> Module {
         let c_name = CString::new(name).unwrap();
 
-        let c_modl = unsafe { LLVMModuleCreateWithName(c_name.as_ptr()) };
-        Module(c_modl)
+        Module(unsafe { LLVMModuleCreateWithName(c_name.as_ptr()) })
+    }
+
+    pub fn new_in_context(name: &str, cont: Context) -> Module {
+        let c_name = CString::new(name).unwrap();
+        Module(unsafe { LLVMModuleCreateWithNameInContext(c_name.as_ptr(), cont.0) })
     }
 
     pub fn add_function(&self, name: &str, tp: FunctionType) -> Function {
@@ -85,7 +92,7 @@ mod tests {
 
     #[test]
     fn test_add_function() {
-        let modl = Module::new_with_name("test");
+        let modl = Module::new("test");
         let _ = modl.add_function("testf", FunctionType::new(Type::int32(), &vec![], false));
         assert!(modl.find_function("testf").is_some());
         let _ = modl.add_function("testf2", FunctionType::new(Type::int32(), &vec![], false));

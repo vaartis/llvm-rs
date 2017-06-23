@@ -5,75 +5,12 @@ use std::fmt;
 use std::convert::{From,TryFrom};
 use std::ffi::CStr;
 
-extern "C" {
-    fn LLVMInt1Type() -> *const CType;
-    fn LLVMInt8Type() -> *const CType;
-    fn LLVMInt16Type() -> *const CType;
-    fn LLVMInt32Type() -> *const CType;
-    fn LLVMInt64Type() -> *const CType;
-    fn LLVMInt128Type() -> *const CType;
-    fn LLVMIntType(num: libc::c_uint) -> *const CType;
+use bindings::*;
 
-    fn LLVMVoidType() -> *const CType;
-
-    fn LLVMGetTypeKind(tp: *const CType) -> TypeKind;
-    fn LLVMPrintTypeToString(tp: *const CType) -> *const libc::c_char;
-    fn LLVMTypeIsSized(tp: *const CType) -> bool;
-
-    fn LLVMTypeConstNull(tp: *const CType) -> *const CType;
-    fn LLVMTypeConstPointerNull(tp: *const CType) -> *const CType;
-    fn LLVMTypeGetUndef(tp: *const CType) -> *const CType;
-
-    fn LLVMFunctionType(ret_type: *const CType , args: *const CType, param_count: libc::c_uint, is_vararg: bool) -> *const CType;
-    fn LLVMIsFunctionVarArg(t: *const CType) -> bool;
-    fn LLVMGetReturnType(t: *const CType) -> *const CType;
-    fn LLVMCountParamTypes(t: *const CType) -> libc::c_uint;
-    fn LLVMGetParamTypes(t: *const CType, ar: *const CType);
-}
-
-pub(super) enum CType {}
+pub use bindings::LLVMTypeKind as TypeKind;
 
 #[derive(PartialEq,Eq)]
-pub struct Type(pub(super) *const CType);
-
-#[derive(Debug, PartialEq, Eq)]
-#[repr(C)]
-pub enum TypeKind {
-    /// type with no size
-    Void,
-    /// 16 bit floating point type
-    Half,
-    ///  32 bit floating point type
-    Float,
-    // 64 bit floating point type
-    Double,
-    /// 80 bit floating point type (X87)
-    X86FP80,
-    /// 128 bit floating point type (112-bit mantissa)
-    FP128,
-    /// 128 bit floating point type (two 64-bits)
-    PPCFP128,
-    // Labels
-    Label,
-    // Arbitrary bit width integers
-    Integer,
-    /// Functions
-    Function,
-    /// Structures
-    Struct,
-    /// Arrays
-    Array,
-    /// Pointers
-    Pointer,
-    /// SIMD 'packed' format, or other vector type
-    Vector,
-    /// Metadata
-    Metadata,
-    /// X86 MMX
-    X86MMX,
-    /// Tokens
-    Token
-}
+pub struct Type(pub(super) LLVMTypeRef);
 
 impl Type {
     pub fn kind(&self) -> TypeKind {
@@ -82,10 +19,14 @@ impl Type {
         }
     }
 
-    pub fn sized(&self) -> bool {
+    pub fn is_sized(&self) -> bool {
         unsafe {
-            LLVMTypeIsSized(self.0)
+            LLVMTypeIsSized(self.0) == 1
         }
+    }
+
+    pub fn void() -> Type {
+        Type(unsafe { LLVMVoidType() })
     }
 
     pub fn int1() -> Type { Type(unsafe { LLVMInt1Type() }) }
@@ -95,22 +36,6 @@ impl Type {
     pub fn int64() -> Type { Type(unsafe { LLVMInt64Type() }) }
     pub fn int128() -> Type { Type(unsafe { LLVMInt128Type()}) }
     pub fn int(num: libc::c_uint) -> Type { Type(unsafe { LLVMIntType(num) }) } // c_uint is just an alias, so probably OK
-
-    pub fn undef(tp: Type) -> Type {
-        Type(unsafe { LLVMTypeGetUndef(tp.0) })
-    }
-
-    pub fn void() -> Type {
-        Type(unsafe { LLVMVoidType() })
-    }
-
-    pub fn const_null(tp: Type) -> Type {
-        Type(unsafe { LLVMTypeConstNull(tp.0) })
-    }
-
-    pub fn const_pointer_null(tp: Type) -> Type {
-        Type(unsafe { LLVMTypeConstPointerNull(tp.0) })
-    }
 }
 
 impl fmt::Debug for Type {
@@ -131,7 +56,7 @@ impl TryFrom<Type> for FunctionType {
     type Error = ();
     // () - not a function type
     fn try_from(val: Type) -> Result<FunctionType, ()> {
-        if val.kind() == TypeKind::Function {
+        if val.kind() == TypeKind::LLVMFunctionTypeKind {
             Ok(FunctionType(val.0))
         } else {
             Err(())
@@ -140,16 +65,16 @@ impl TryFrom<Type> for FunctionType {
 }
 
 #[derive(PartialEq,Eq)]
-pub struct FunctionType(pub(super) *const CType);
+pub struct FunctionType(pub(super) LLVMTypeRef);
 
 impl FunctionType {
     pub fn new(ret_type: Type, args: &[Type], is_vararg: bool) -> FunctionType {
-        let args_ctypes = args.iter().map(|x| x.0).collect::<Vec<_>>().as_ptr() as *const CType;
-        FunctionType(unsafe { LLVMFunctionType(ret_type.0, args_ctypes, args.len() as libc::c_uint, is_vararg) })
+        let args_ctypes = args.iter().map(|x| x.0).collect::<Vec<_>>().as_mut_ptr();
+        FunctionType(unsafe { LLVMFunctionType(ret_type.0, args_ctypes, args.len() as libc::c_uint, is_vararg as i32) })
     }
 
     pub fn is_vararg(&self) -> bool {
-        unsafe { LLVMIsFunctionVarArg(self.0) }
+        unsafe { LLVMIsFunctionVarArg(self.0) == 1 }
     }
 
     pub fn return_type(&self) -> Type {
@@ -159,9 +84,9 @@ impl FunctionType {
     pub fn params(&self) -> Vec<Type> {
         unsafe {
             let ln = LLVMCountParamTypes(self.0) as usize;
-            let arr = Vec::<*const CType>::with_capacity(ln).as_mut_ptr() as *mut CType;
+            let arr = Vec::<LLVMTypeRef>::with_capacity(ln).as_mut_ptr();
             LLVMGetParamTypes(self.0, arr);
-            let arr = arr as *mut *const CType;
+            let arr = arr as *mut LLVMTypeRef;
             slice::from_raw_parts(arr, ln)
                 .iter().map(|x| Type(*x)).collect::<Vec<_>>()
         }
@@ -197,7 +122,7 @@ mod tests {
 
     #[test]
     fn test_type_kind() {
-        assert_eq!(Type::int32().kind(), TypeKind::Integer);
-        assert_eq!(Type::from(FunctionType::new(Type::int32(), &vec![], false)).kind(), TypeKind::Function);
+        assert_eq!(Type::int32().kind(), TypeKind::LLVMIntegerTypeKind);
+        assert_eq!(Type::from(FunctionType::new(Type::int32(), &vec![], false)).kind(), TypeKind::LLVMFunctionTypeKind);
     }
 }

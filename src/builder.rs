@@ -1,26 +1,13 @@
 extern crate libc;
 
 use std::ops::Drop;
-use ::basic_block::*;
-use ::value::*;
-use ::context::*;
 
-extern "C" {
-    fn LLVMCreateBuilder() -> *const CBuilder;
-    fn LLVMCreateBuilderInContext(c: *const CContext) -> *const CBuilder;
-    fn LLVMDisposeBuilder(bld: *const CBuilder);
+use basic_block::*;
+use value::*;
+use context::*;
+use bindings::*;
 
-    fn LLVMPositionBuilderAtEnd(b: *const CBuilder, bb: *const CBasicBlock);
-    fn LLVMGetInsertBlock(bld: *const CBuilder) -> *const CBasicBlock;
-
-    fn LLVMBuildRetVoid(bld: *const CBuilder) -> *const CValue;
-    fn LLVMBuildRet(bld: *const CBuilder, val: *const CValue) -> *const CValue;
-    fn LLVMBuildBr(bld: *const CBuilder, bb: *const CBasicBlock) -> *const CValue;
-}
-
-pub(super) enum CBuilder {}
-
-pub struct IRBuilder(pub(super) *const CBuilder);
+pub struct IRBuilder(pub(super) LLVMBuilderRef);
 
 impl IRBuilder {
     pub fn new() -> IRBuilder {

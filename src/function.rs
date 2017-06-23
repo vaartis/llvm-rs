@@ -3,15 +3,11 @@ extern crate libc;
 use std::ffi::CString;
 use std::convert::From;
 
-use ::value::*;
-use ::basic_block::*;
+use value::*;
+use basic_block::*;
+use bindings::*;
 
-extern "C" {
-    fn LLVMGetEntryBasicBlock(f: *const CValue) -> *const CBasicBlock;
-    fn LLVMAppendBasicBlock(f: *const CValue, name: *const libc::c_char) -> *const CBasicBlock;
-}
-
-pub struct Function(pub(super) *const CValue);
+pub struct Function(pub(super) LLVMValueRef);
 
 impl Function {
     pub fn entry_bb(&self) -> Option<BasicBlock> {

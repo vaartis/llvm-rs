@@ -3,27 +3,13 @@ extern crate libc;
 use std::ffi::{CStr, CString};
 use std::fmt;
 
-use ::context::*;
-use ::types::*;
-use ::value::*;
-use ::function::Function;
+use context::*;
+use types::*;
+use value::*;
+use function::*;
+use bindings::*;
 
-extern "C" {
-    fn LLVMModuleCreateWithName(s: *const libc::c_char) -> *const CModule;
-    fn LLVMModuleCreateWithNameInContext(s: *const libc::c_char, cont: *const CContext) -> *const CModule;
-    fn LLVMDisposeModule(m: *const CModule);
-
-    fn LLVMPrintModuleToString(m: *const CModule) -> *const libc::c_char;
-
-    fn LLVMAddFunction(m: *const CModule, nm: *const libc::c_char, tp: *const CType) -> *const CValue;
-    fn LLVMGetNamedFunction(m: *const CModule, nm: *const libc::c_char) -> *const CValue;
-    fn LLVMGetFirstFunction(m: *const CModule) -> *const CValue;
-    fn LLVMGetNextFunction(m: *const CValue) -> *const CValue;
-}
-
-pub(super) enum CModule {}
-
-pub struct Module(pub(super) *const CModule);
+pub struct Module(pub(super) LLVMModuleRef);
 
 impl Module {
     pub fn new(name: &str) -> Module {

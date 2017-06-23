@@ -1,14 +1,8 @@
 use std::ops::Drop;
 
-pub(super) enum CContext {}
+use bindings::*;
 
-pub struct Context(pub(super) *const CContext);
-
-extern "C" {
-    fn LLVMContextCreate() -> *const CContext;
-    fn LLVMGetGlobalContext() -> *const CContext;
-    fn LLVMContextDispose(cont: *const CContext);
-}
+pub struct Context(pub(super) LLVMContextRef);
 
 impl Context {
     pub fn new() -> Context {

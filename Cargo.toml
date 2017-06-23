@@ -2,6 +2,10 @@
 name = "llvm-rs"
 version = "4.0.0"
 authors = ["Ekaterina Vaartis <TyanNN@cocaine.ninja>"]
+build = "build.rs"
 
 [dependencies]
 libc = "*"
+
+[build-dependencies]
+bindgen = "0.23"

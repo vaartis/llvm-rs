@@ -3,17 +3,10 @@ extern crate libc;
 use std::ffi::CStr;
 use std::fmt;
 
-use ::types::*;
+use types::*;
+use bindings::*;
 
-extern "C" {
-    pub(super) fn LLVMPrintValueToString(v: *const CValue) -> *const libc::c_char;
-    fn LLVMTypeOf(v: *const CValue) -> *const CType;
-
-    fn LLVMConstInt(tp: *const CType, num: libc::c_ulonglong, sig_ext: bool) -> *const CValue;
-}
-
-pub(super) enum CValue {}
-pub struct Value(pub(super) *const CValue);
+pub struct Value(pub(super) LLVMValueRef);
 
 impl Value {
     pub fn type_of(&self) -> Type {
@@ -21,7 +14,19 @@ impl Value {
     }
 
     pub fn const_int(tp: Type, num: libc::c_ulonglong, sign_extended: bool) -> Value {
-        unsafe { Value(LLVMConstInt(tp.0, num, sign_extended)) }
+        unsafe { Value(LLVMConstInt(tp.0, num, sign_extended as i32)) }
+    }
+
+    pub fn undef(tp: Type) -> Value {
+        Value(unsafe { LLVMGetUndef(tp.0) })
+    }
+
+    pub fn const_null(tp: Type) -> Value {
+        Value(unsafe { LLVMConstNull(tp.0) })
+    }
+
+    pub fn const_pointer_null(tp: Type) -> Value {
+        Value(unsafe { LLVMConstPointerNull(tp.0) })
     }
 }
 

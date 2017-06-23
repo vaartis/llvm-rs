@@ -2,6 +2,8 @@
 
 extern crate libc;
 
+mod bindings;
+
 pub mod types;
 pub mod module;
 pub mod builder;

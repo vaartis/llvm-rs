@@ -6,16 +6,10 @@ use std::ffi::CStr;
 
 use value::*;
 use value_kind::*;
-
-extern "C" {
-    fn LLVMValueAsBasicBlock(val: *const CValue) -> *const CBasicBlock;
-    fn LLVMBasicBlockAsValue(val: *const CBasicBlock) -> *const CValue;
-}
-
-pub(super) enum CBasicBlock {}
+use bindings::*;
 
 #[derive(PartialEq,Eq)]
-pub struct BasicBlock(pub(super) *const CBasicBlock);
+pub struct BasicBlock(pub(super) LLVMBasicBlockRef);
 
 impl From<BasicBlock> for Value {
     fn from(other: BasicBlock) -> Value {

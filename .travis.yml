@@ -9,7 +9,13 @@ addons:
       - sourceline: "deb http://apt.llvm.org/trusty/ llvm-toolchain-trusty-4.0 main"
         key_url: "http://apt.llvm.org/llvm-snapshot.gpg.key"
     packages:
-      - llvm-4.0 llvm-4.0-dev
+      - llvm-4.0 llvm-4.0-dev clang-4.0 clang-4.0-dev
 
 script:
-  cargo test --verbose -- --test-threads=1
+  - mkdir -p $HOME/.local/bin
+  - ln -sf $(which clang-4.0) $HOME/.local/bin/clang
+  - ln -sf $(which llvm-config-4.0) $HOME/.local/bin/llvm-config
+  - cargo test --verbose -- --test-threads=1
+
+env:
+  PATH=$HOME/.local/bin:$PATH

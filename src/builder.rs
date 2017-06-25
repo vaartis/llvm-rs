@@ -24,8 +24,9 @@ impl IRBuilder {
         }
     }
 
-    pub fn insertion_block(&self) -> BasicBlock {
-        BasicBlock(unsafe { LLVMGetInsertBlock(self.0) })
+    pub fn insertion_block(&self) -> Option<BasicBlock> {
+        let r = unsafe { LLVMGetInsertBlock(self.0) };
+        if r.is_null() { None } else { Some(BasicBlock(r)) }
     }
 
     pub fn ret_void(&self) -> Value {
@@ -38,6 +39,10 @@ impl IRBuilder {
 
     pub fn br(&self, br: BasicBlock) -> Value {
         Value(unsafe { LLVMBuildBr(self.0, br.0) })
+    }
+
+    pub fn cond_br(&self, cond: Value, then: BasicBlock, els: BasicBlock) -> Value {
+        Value(unsafe { LLVMBuildCondBr(self.0, cond.0, then.0, els.0) })
     }
 }
 
@@ -54,6 +59,7 @@ mod tests {
     use super::IRBuilder;
     use ::module::*;
     use ::types::*;
+    use ::value::*;
 
     #[test]
     fn test_insertion_block_and_position_at_end() {
@@ -62,6 +68,6 @@ mod tests {
         let entry_b = f.append_bb("entry");
         let builder = IRBuilder::new();
         builder.position_at_end(f.entry_bb().unwrap());
-        assert_eq!(builder.insertion_block(), entry_b);
+        assert_eq!(builder.insertion_block().unwrap(), entry_b);
     }
 }

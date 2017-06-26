@@ -3,10 +3,10 @@ extern crate libc;
 use std::ffi::{CStr, CString};
 use std::fmt;
 
-use context::*;
-use types::*;
-use value::*;
-use function::*;
+use context::Context;
+use types::FunctionType;
+use value::Value;
+use function::Function;
 use bindings::*;
 
 pub struct Module(pub(super) LLVMModuleRef);

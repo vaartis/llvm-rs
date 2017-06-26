@@ -1,10 +1,12 @@
 extern crate libc;
 
 use std::ops::Drop;
+use std::collections::HashMap;
 
-use basic_block::*;
-use value::*;
-use context::*;
+use basic_block::BasicBlock;
+use value::Value;
+use context::Context;
+use switch::Switch;
 use bindings::*;
 
 pub struct IRBuilder(pub(super) LLVMBuilderRef);
@@ -44,6 +46,18 @@ impl IRBuilder {
     pub fn cond_br(&self, cond: Value, then: BasicBlock, els: BasicBlock) -> Value {
         Value(unsafe { LLVMBuildCondBr(self.0, cond.0, then.0, els.0) })
     }
+
+    pub fn switch(&self, val: Value, default: BasicBlock, cases: HashMap<Value, BasicBlock>) -> Switch {
+        let switch = unsafe {
+            LLVMBuildSwitch(self.0, val.0, default.0, cases.len() as u32)
+        };
+        for (on_val, dest) in cases {
+            unsafe {
+                LLVMAddCase(switch, on_val.0, dest.0);
+            }
+        }
+        Switch(switch)
+    }
 }
 
 impl Drop for IRBuilder {
@@ -59,7 +73,6 @@ mod tests {
     use super::IRBuilder;
     use ::module::*;
     use ::types::*;
-    use ::value::*;
 
     #[test]
     fn test_insertion_block_and_position_at_end() {

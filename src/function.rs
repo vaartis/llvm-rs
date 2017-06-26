@@ -3,8 +3,8 @@ extern crate libc;
 use std::ffi::CString;
 use std::convert::From;
 
-use value::*;
-use basic_block::*;
+use value::Value;
+use basic_block::BasicBlock;
 use bindings::*;
 
 pub struct Function(pub(super) LLVMValueRef);

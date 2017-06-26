@@ -4,11 +4,10 @@ use std::convert::{From,TryFrom};
 use std::fmt;
 use std::ffi::CStr;
 
-use value::*;
-use value_kind::*;
+use value::{Value,ValueKind};
 use bindings::*;
 
-#[derive(PartialEq,Eq)]
+#[derive(PartialEq,Eq,Copy,Clone)]
 pub struct BasicBlock(pub(super) LLVMBasicBlockRef);
 
 impl From<BasicBlock> for Value {
@@ -22,7 +21,7 @@ impl From<BasicBlock> for Value {
 impl TryFrom<Value> for BasicBlock {
     type Error = ();
     fn try_from(other: Value) -> Result<BasicBlock, ()> {
-        if other.classify() == ValueKind::BasicBlock {
+        if other.kind() == ValueKind::LLVMBasicBlockValueKind {
             unsafe {
                 Ok(BasicBlock(LLVMValueAsBasicBlock(other.0)))
             }

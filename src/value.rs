@@ -8,7 +8,7 @@ use bindings::*;
 
 pub use bindings::{LLVMValueKind as ValueKind, LLVMOpcode as Opcode};
 
-#[derive(PartialEq, Eq, Hash)]
+#[derive(PartialEq,Eq,Copy,Clone,Hash)]
 pub struct Value(pub(super) LLVMValueRef);
 
 impl Value {

@@ -1,9 +1,10 @@
-use std::convert::TryFrom;
+use std::convert::{From,TryFrom};
 
 use basic_block::BasicBlock;
 use value::{Value,Opcode};
 use bindings::*;
 
+#[derive(PartialEq,Eq,Copy,Clone)]
 pub struct Switch(pub(super) LLVMValueRef);
 
 impl Switch {
@@ -53,5 +54,6 @@ mod tests {
 
         let sw = builder.switch(Value::const_int(Type::int1(), 1), next_b, hash);
         assert_eq!(next_b, sw.default_dest());
+
     }
 }

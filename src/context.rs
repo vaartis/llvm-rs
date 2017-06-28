@@ -2,6 +2,7 @@ use std::ops::Drop;
 
 use bindings::*;
 
+#[derive(PartialEq,Eq)]
 pub struct Context(pub(super) LLVMContextRef);
 
 impl Context {

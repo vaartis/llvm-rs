@@ -1,12 +1,14 @@
 extern crate libc;
 
-use std::ffi::CString;
-use std::convert::From;
+use std::ffi::{CString,CStr};
+use std::convert::{From,TryFrom};
+use std::fmt;
 
-use value::Value;
+use value::{Value,ValueKind};
 use basic_block::BasicBlock;
 use bindings::*;
 
+#[derive(PartialEq,Eq,Copy,Clone)]
 pub struct Function(pub(super) LLVMValueRef);
 
 impl Function {
@@ -34,6 +36,26 @@ impl From<Function> for Value {
         Value(other.0)
     }
 }
+
+impl TryFrom<Value> for Function {
+    type Error = ();
+    fn try_from(other: Value) -> Result<Function, ()> {
+        if other.kind() == ValueKind::LLVMFunctionValueKind {
+            Ok(Function(other.0))
+        } else {
+            Err(())
+        }
+    }
+}
+
+impl fmt::Debug for Function {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let c_s = unsafe { CStr::from_ptr(LLVMPrintValueToString(self.0)) };
+        let st = c_s.to_str().unwrap(); // Propably valid utf8
+        write!(f, "{}", st)
+    }
+}
+
 
 #[cfg(test)]
 mod tests {

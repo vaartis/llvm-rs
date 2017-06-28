@@ -9,7 +9,7 @@ use bindings::*;
 
 pub use bindings::LLVMTypeKind as TypeKind;
 
-#[derive(PartialEq,Eq)]
+#[derive(PartialEq,Eq,Copy,Clone)]
 pub struct Type(pub(super) LLVMTypeRef);
 
 impl Type {

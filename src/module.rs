@@ -9,6 +9,7 @@ use value::Value;
 use function::Function;
 use bindings::*;
 
+#[derive(PartialEq,Eq)]
 pub struct Module(pub(super) LLVMModuleRef);
 
 impl Module {
@@ -18,7 +19,7 @@ impl Module {
         Module(unsafe { LLVMModuleCreateWithName(c_name.as_ptr()) })
     }
 
-    pub fn new_in_context(name: &str, cont: Context) -> Module {
+    pub fn new_in_context(name: &str, cont: &Context) -> Module {
         let c_name = CString::new(name).unwrap();
         Module(unsafe { LLVMModuleCreateWithNameInContext(c_name.as_ptr(), cont.0) })
     }

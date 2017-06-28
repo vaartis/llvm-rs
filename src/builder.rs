@@ -2,13 +2,17 @@ extern crate libc;
 
 use std::ops::Drop;
 use std::collections::HashMap;
+use std::ffi::CString;
 
 use basic_block::BasicBlock;
 use value::Value;
 use context::Context;
 use switch::Switch;
+use function::Function;
+use function_call::FunctionCall;
 use bindings::*;
 
+#[derive(PartialEq,Eq)]
 pub struct IRBuilder(pub(super) LLVMBuilderRef);
 
 impl IRBuilder {
@@ -16,7 +20,7 @@ impl IRBuilder {
         IRBuilder(unsafe { LLVMCreateBuilder() })
     }
 
-    pub fn new_in_context(cont: Context) -> IRBuilder {
+    pub fn new_in_context(cont: &Context) -> IRBuilder {
         IRBuilder(unsafe { LLVMCreateBuilderInContext(cont.0) })
     }
 
@@ -43,7 +47,7 @@ impl IRBuilder {
         Value(unsafe { LLVMBuildBr(self.0, br.0) })
     }
 
-    pub fn cond_br(&self, cond: Value, then: BasicBlock, els: BasicBlock) -> Value {
+    pub fn cond_br(&self, cond: Value, then: &BasicBlock, els: &BasicBlock) -> Value {
         Value(unsafe { LLVMBuildCondBr(self.0, cond.0, then.0, els.0) })
     }
 
@@ -58,6 +62,18 @@ impl IRBuilder {
         }
         Switch(switch)
     }
+
+    pub fn call(&self, f: Function, args: &[Value]) -> FunctionCall {
+        unsafe {
+            FunctionCall(LLVMBuildCall(self.0,
+                                       f.0,
+                                       args.iter().map(|x| x.0).collect::<Vec<_>>().as_mut_ptr(),
+                                       args.len() as u32,
+                                       CString::new("").unwrap().as_ptr()
+            )
+            )
+        }
+    }
 }
 
 impl Drop for IRBuilder {
@@ -71,8 +87,9 @@ impl Drop for IRBuilder {
 #[cfg(test)]
 mod tests {
     use super::IRBuilder;
-    use ::module::*;
-    use ::types::*;
+    use module::Module;
+    use types::{Type,FunctionType};
+    use value::Value;
 
     #[test]
     fn test_insertion_block_and_position_at_end() {
@@ -82,5 +99,18 @@ mod tests {
         let builder = IRBuilder::new();
         builder.position_at_end(f.entry_bb().unwrap());
         assert_eq!(builder.insertion_block().unwrap(), entry_b);
+    }
+
+    #[test]
+    fn test_function_calling() {
+        let modl = Module::new("test");
+        let f = modl.add_function("testf", FunctionType::new(Type::int32(), &vec![], false));
+        let f2 = modl.add_function("testf2", FunctionType::new(Type::int32(), &vec![], false));
+        let _ = f.append_bb("entry");
+        let _ = f2.append_bb("entry");
+        let builder = IRBuilder::new();
+        builder.position_at_end(f.entry_bb().unwrap());
+        let call = builder.call(f2, &vec![Value::const_int(Type::int32(), 10)]);
+        assert_eq!(call.called_value(), f2);
     }
 }
